@@ -8,7 +8,10 @@ import requests
 def fetch(url: str) -> dict[str, str]:
     # raise NotImplementedError("Not yet implemented Worker")
     started_at = time.monotonic()
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+    except requests.exceptions.RequestException as e:
+        return {"status_code": 500, "time": 0}
     requeued_time = time.monotonic() - started_at
     return {"status_code": response.status_code, "time": requeued_time}
 

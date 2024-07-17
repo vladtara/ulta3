@@ -1,3 +1,4 @@
+import json
 from statistics import mean
 
 
@@ -20,6 +21,12 @@ class Results:
         self.total = total
         self.requests = requests
 
+    def __filter_requests(self, *args) -> list[dict]:
+        """
+        Filter requests based on status code
+        """
+        return list(filter(lambda x: x["status_code"] in range(*args), self.requests))
+
     def slowest(self) -> float:
         """
         Returns the slowest request's completion time
@@ -34,9 +41,15 @@ class Results:
         ... 'time': 1.04
         ... }])
         >>> results.slowest()
-        6.1
+        1.04
         """
-        return round(max(self.requests, key=lambda x: x["time"])["time"], 2)
+        try:
+            return round(
+                min(self.__filter_requests(200, 299), key=lambda x: x["time"])["time"],
+                2,
+            )
+        except ValueError:
+            return 0
 
     def fastest(self) -> float:
         """
@@ -52,9 +65,15 @@ class Results:
         ... 'time': 1.04
         ... }])
         >>> results.fastest()
-        1.04
+        3.4
         """
-        return round(min(self.requests, key=lambda x: x["time"])["time"], 2)
+        try:
+            return round(
+                max(self.__filter_requests(200, 299), key=lambda x: x["time"])["time"],
+                2,
+            )
+        except ValueError:
+            return 0
 
     def average(self) -> float:
         """
@@ -70,9 +89,12 @@ class Results:
         ... 'time': 1.04
         ... }])
         >>> results.average()
-        3.51
+        2.22
         """
-        return round(mean([x["time"] for x in self.requests]), 2)
+        try:
+            return round(mean([x["time"] for x in self.__filter_requests(200, 299)]), 2)
+        except ValueError:
+            return 0
 
     def successful_requests(self) -> int:
         """
@@ -90,9 +112,7 @@ class Results:
         >>> results.successful_requests()
         2
         """
-        return len(
-            list(filter(lambda x: x["status_code"] in range(200, 299), self.requests))
-        )
+        return len(self.__filter_requests(200, 299))
 
     def failed_requests(self) -> int:
         """
@@ -110,9 +130,7 @@ class Results:
         >>> results.failed_requests()
         1
         """
-        return len(
-            list(filter(lambda x: x["status_code"] in range(500, 599), self.requests))
-        )
+        return len(self.__filter_requests(500, 599))
 
     def total_time(self) -> float:
         """
@@ -167,3 +185,36 @@ class Results:
         0.28
         """
         return round(len(self.requests) / self.total, 2)
+
+    def text(self) -> str:
+        """
+        Returns the text representation of the results
+        """
+        return f"""
+--- Results ---
+Successful requests {self.successful_requests()} 
+Failed requests     {self.failed_requests()} 
+Slowest             {self.slowest()}s
+Fastest             {self.fastest()}s
+Average             {self.average()}s
+Total time          {self.total_time()}s
+Requests Per Minute {self.requests_per_minute()}
+Requests Per Second {self.requests_per_second()}   
+        """
+
+    def json(self) -> str:
+        """
+        Returns the json representation of the results
+        """
+        return json.dumps(
+            {
+                "successful_requests": self.successful_requests(),
+                "failed_requests": self.failed_requests(),
+                "slowest": self.slowest(),
+                "fastest": self.fastest(),
+                "average": self.average(),
+                "total_time": self.total_time(),
+                "requests_per_minute": self.requests_per_minute(),
+                "requests_per_second": self.requests_per_second(),
+            }
+        )

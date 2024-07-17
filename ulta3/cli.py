@@ -8,36 +8,25 @@ from ulta3.stats import Results
 @click.option(
     "--concurrency", "-c", default=1, help="Number of concurrency. Default 1."
 )
-@click.option("--out-json", "-j", default=None, help="Output json file. Default None.")
+@click.option("--json-file", "-j", default=None, help="Output json file. Default None.")
 @click.argument("url", required=True)
-def cli(request, concurrency, out_json, url):
+def cli(request, concurrency, json_file, url):
     """This script prints hello world"""
     click.echo(f"Request: {request}")
     click.echo(f"Concurrency: {concurrency}")
-    click.echo(f"Out-json: {out_json}")
+    click.echo(f"Json-file: {json_file}")
     click.echo(f"URL: {url}")
     total, results = run(url, request, concurrency)
-    display_results(Results(total, results), out_json)
+    display_results(Results(total, results), json_file)
 
 
-def display_results(results, out_json):
-    if out_json:
-        with open(out_json, "w") as file:
+def display_results(results, json_file):
+    click.echo("... Done!")
+    if json_file:
+        with open(json_file, "w") as file:
             file.write(results.json())
     else:
-        TEXT = f"""
-.... Done!
---- Results ---
-Successful requests {results.successful_requests()} 
-Failed requests     {results.failed_requests()} 
-Slowest             {results.slowest()}s
-Fastest             {results.fastest()}s
-Average             {results.average()}s
-Total time          {results.total_time()}s
-Requests Per Minute {results.requests_per_minute()}
-Requests Per Second {results.requests_per_second()}   
-"""
-        click.echo(TEXT)
+        click.echo(results.text())
 
 
 if __name__ == "__main__":
