@@ -38,12 +38,10 @@ async def distribute_work(
     started_at = time.monotonic()
     await queue.join()
     total_time = time.monotonic() - started_at
-    print(
-        f"{concurrency} workers took {total_time:.2f} seconds to complete {len(results)} requests"
-    )
+    return total_time
 
 
 def run(url: str, requests: int, concurrency: int) -> None:
     results = []
-    asyncio.run(distribute_work(url, requests, concurrency, results))
-    print(results)
+    total = asyncio.run(distribute_work(url, requests, concurrency, results))
+    return (total, results)

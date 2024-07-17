@@ -7,6 +7,7 @@ class Results:
     requests that were made.
     Here's an example of what the information will look like:
         Successful requests 500
+        Failed requests 0
         Slowest 0.010s
         Fastest 0.001s
         Average 0.003s
@@ -35,7 +36,7 @@ class Results:
         >>> results.slowest()
         6.1
         """
-        return max(self.requests, key=lambda x: x["time"])["time"]
+        return round(max(self.requests, key=lambda x: x["time"])["time"], 2)
 
     def fastest(self) -> float:
         """
@@ -53,7 +54,7 @@ class Results:
         >>> results.fastest()
         1.04
         """
-        return min(self.requests, key=lambda x: x["time"])["time"]
+        return round(min(self.requests, key=lambda x: x["time"])["time"], 2)
 
     def average(self) -> float:
         """
@@ -69,16 +70,13 @@ class Results:
         ... 'time': 1.04
         ... }])
         >>> results.average()
-        3.513333333333333
+        3.51
         """
-        return mean([x["time"] for x in self.requests])
-
-    def total_time(self) -> float:
-        return len([x["time"] for x in self.requests])
+        return round(mean([x["time"] for x in self.requests]), 2)
 
     def successful_requests(self) -> int:
         """
-        Returns the slowest request's completion time
+        Returns the successful request's completion time
         >>> results = Results(10.6, [{
         ... 'status_code': 200,
         ... 'time': 3.4
@@ -92,4 +90,80 @@ class Results:
         >>> results.successful_requests()
         2
         """
-        return len(list(filter(lambda x: x["status_code"] == 200, self.requests)))
+        return len(
+            list(filter(lambda x: x["status_code"] in range(200, 299), self.requests))
+        )
+
+    def failed_requests(self) -> int:
+        """
+        Returns the failed request's completion time
+        >>> results = Results(10.6, [{
+        ... 'status_code': 200,
+        ... 'time': 3.4
+        ... }, {
+        ... 'status_code': 500,
+        ... 'time': 6.1
+        ... }, {
+        ... 'status_code': 200,
+        ... 'time': 1.04
+        ... }])
+        >>> results.failed_requests()
+        1
+        """
+        return len(
+            list(filter(lambda x: x["status_code"] in range(500, 599), self.requests))
+        )
+
+    def total_time(self) -> float:
+        """
+        Returns the total time
+        >>> results = Results(10.64, [{
+        ... 'status_code': 200,
+        ... 'time': 3.4
+        ... }, {
+        ... 'status_code': 500,
+        ... 'time': 6.1
+        ... }, {
+        ... 'status_code': 200,
+        ... 'time': 1.04
+        ... }])
+        >>> results.total_time()
+        10.64
+        """
+        return round(self.total, 2)
+
+    def requests_per_minute(self) -> float:
+        """
+        Returns the requests per minute
+        >>> results = Results(10.6, [{
+        ... 'status_code': 200,
+        ... 'time': 3.4
+        ... }, {
+        ... 'status_code': 500,
+        ... 'time': 6.1
+        ... }, {
+        ... 'status_code': 200,
+        ... 'time': 1.04
+        ... }])
+        >>> results.requests_per_minute()
+        16.98
+        """
+        return round(len(self.requests) / self.total * 60, 2)
+
+    def requests_per_second(self) -> float:
+        """
+        Returns the requests per second
+        >>> results = Results(10.6, [{
+        ... 'status_code': 200,
+        ... 'time': 3.4
+        ... }, {
+        ... 'status_code': 500,
+        ... 'time': 6.1
+        ... }, {
+        ... 'status_code': 200,
+        ... 'time': 1.04
+        ... }])
+        >>> results.requests_per_second()
+        0.28
+        """
+        return round(len(self.requests) / self.total, 2)
