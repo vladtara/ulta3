@@ -5,9 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 
 
-import time
-import requests
-
 def fetch(url: str) -> dict[str, str]:
     """
     Fetches the content of a given URL and returns the response status code and the time taken to fetch the content.
@@ -55,9 +52,7 @@ async def worker(name: str, queue: asyncio.Queue, results: list) -> None:
         queue.task_done()
 
 
-async def distribute_work(
-    url: str, requests: int, concurrency: int, results: list
-) -> None:
+async def distribute_work(url: str, requests: int, concurrency: int) -> None:
     """
     Distributes work among multiple workers to send HTTP requests concurrently.
 
@@ -71,6 +66,7 @@ async def distribute_work(
         None
 
     """
+    results = []
     queue = asyncio.Queue()
 
     [queue.put_nowait(url) for _ in range(requests)]
@@ -81,12 +77,10 @@ async def distribute_work(
     started_at = time.monotonic()
     await queue.join()
     total_time = time.monotonic() - started_at
-    return total_time
+    return (total_time, results)
 
 
-import asyncio
-
-def run(url: str, requests: int, concurrency: int) -> None:
+def run(url: str, requests: int, concurrency: int) -> tuple:
     """
     Executes HTTP requests to a given URL in parallel using asyncio.
 
@@ -99,6 +93,5 @@ def run(url: str, requests: int, concurrency: int) -> None:
         tuple: A tuple containing the total number of requests sent and a list of results.
 
     """
-    results = []
-    total = asyncio.run(distribute_work(url, requests, concurrency, results))
+    total, results = asyncio.run(distribute_work(url, requests, concurrency))
     return (total, results)
